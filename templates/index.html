@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShortsCut AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #ff3d3d;
+    --red-dim: rgba(255,61,61,0.15);
+    --red-border: rgba(255,61,61,0.3);
+    --bg: #08080e;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8e8f0;
+    --muted: rgba(255,255,255,0.38);
+    --green: #00e676;
+    --amber: #ffca28;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  /* Glow blob */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 400px;
+    background: radial-gradient(ellipse, rgba(255,61,61,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    background: rgba(8,8,14,0.8);
+  }
+
+  .logo {
+    width: 38px; height: 38px;
+    background: var(--red);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 24px rgba(255,61,61,0.4);
+  }
+
+  .logo-text { font-family: 'Syne', sans-serif; }
+  .logo-text h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text p { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+
+  main {
+    position: relative; z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 44px 24px 80px;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 44px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .hero h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .hero h2 span { color: var(--red); }
+  .hero p { color: var(--muted); font-size: 15px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Upload card */
+  .upload-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .tabs {
+    display: flex; gap: 6px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px; padding: 4px;
+    margin-bottom: 24px;
+  }
+
+  .tab {
+    flex: 1; padding: 10px 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: var(--muted);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .tab.active {
+    background: var(--red-dim);
+    border-color: var(--red-border);
+    color: #ff7a7a;
+  }
+
+  .tab:hover:not(.active) { background: rgba(255,255,255,0.04); color: var(--text); }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 44px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: rgba(255,255,255,0.01);
+  }
+
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--red-border);
+    background: var(--red-dim);
+  }
+
+  .dropzone.has-file {
+    border-color: rgba(0,230,118,0.3);
+    background: rgba(0,230,118,0.04);
+  }
+
+  .drop-icon { font-size: 40px; margin-bottom: 12px; }
+  .drop-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+  .drop-sub { font-size: 13px; color: var(--muted); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+
+  .file-slot {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+
+  .file-slot:hover { border-color: rgba(255,255,255,0.14); }
+
+  .file-slot label {
+    font-size: 11px; color: var(--muted);
+    display: block; margin-bottom: 6px;
+    letter-spacing: 0.06em; cursor: pointer;
+  }
+
+  .file-slot .fname {
+    font-size: 13px; font-weight: 500;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .file-slot .fname.empty { color: var(--muted); font-weight: 400; }
+  .file-slot .fname.loaded { color: var(--green); }
+
+  textarea {
+    width: 100%;
+    min-height: 220px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 18px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { border-color: var(--red-border); }
+  textarea::placeholder { color: var(--muted); }
+
+  .url-input {
+    display: flex; gap: 10px; align-items: center;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 14px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus { border-color: var(--red-border); }
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  .note {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: rgba(255,202,40,0.06);
+    border: 1px solid rgba(255,202,40,0.15);
+    border-radius: 10px;
+    font-size: 12px;
+    color: rgba(255,202,40,0.8);
+    line-height: 1.6;
+  }
+
+  .btn-analyze {
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--red);
+    border: none; border-radius: 12px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: -0.3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 24px rgba(255,61,61,0.3);
+  }
+
+  .btn-analyze:hover { background: #ff5252; box-shadow: 0 6px 32px rgba(255,61,61,0.45); transform: translateY(-1px); }
+  .btn-analyze:disabled { background: rgba(255,255,255,0.08); color: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+  /* Progress / Analyzing */
+  #analyzing-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 32px;
+    text-align: center;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .spinner {
+    width: 52px; height: 52px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .progress-bar {
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    height: 5px;
+    max-width: 320px;
+    margin: 20px auto 0;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff3d3d, #ff7a7a);
+    border-radius: 100px;
+    transition: width 0.4s ease;
+  }
+
+  .log-box {
+    margin-top: 20px;
+    text-align: left;
+    max-width: 480px;
+    margin-left: auto; margin-right: auto;
+    max-height: 140px;
+    overflow-y: auto;
+  }
+
+  .log-line {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 2px 0;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Results */
+  #result-panel { display: none; }
+
+  .summary-bar {
+    background: var(--red-dim);
+    border: 1px solid var(--red-border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .summary-bar .label { font-size: 11px; color: #ff7a7a; letter-spacing: 0.07em; font-weight: 600; margin-bottom: 6px; }
+  .summary-bar .text { font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.7; }
+
+  .shorts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .short-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+    transition: border-color 0.2s;
+  }
+
+  .short-card:hover { border-color: rgba(255,255,255,0.12); }
+
+  .short-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .short-num {
+    width: 36px; height: 36px;
+    background: var(--red-dim);
+    border: 1px solid var(--red-border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 800;
+    color: #ff7a7a;
+    flex-shrink: 0;
+  }
+
+  .short-meta { flex: 1; min-width: 0; }
+  .short-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .short-info { font-size: 12px; color: var(--muted); }
+
+  .score-badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px; font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .chevron {
+    font-size: 14px;
+    color: var(--muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .short-card.open .chevron { transform: rotate(180deg); }
+
+  .short-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .short-card.open .short-body { display: block; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+
+  .detail-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .detail-box.full { grid-column: 1 / -1; }
+  .detail-box .dlabel { font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; }
+  .detail-box .dval { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .detail-box .hook { color: var(--amber); font-size: 15px; font-weight: 600; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag {
+    background: var(--red-dim);
+    border: 1px solid var(--red-border);
+    color: #ff8a8a;
+    padding: 4px 10px; border-radius: 20px; font-size: 12px;
+  }
+
+  .script-box {
+    background: #0d0d15;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px; line-height: 1.8;
+    color: rgba(255,255,255,0.6);
+    white-space: pre-wrap;
+    max-height: 180px;
+    overflow-y: auto;
+    font-family: 'DM Mono', 'Courier New', monospace;
+  }
+
+  .download-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+    background: linear-gradient(135deg, rgba(0,230,118,0.15), rgba(0,200,100,0.1));
+    border: 1px solid rgba(0,230,118,0.3);
+    border-radius: 12px;
+    color: var(--green);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .download-btn:hover {
+    background: rgba(0,230,118,0.2);
+    box-shadow: 0 4px 20px rgba(0,230,118,0.15);
+  }
+
+  .no-video-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(255,202,40,0.06);
+    border: 1px solid rgba(255,202,40,0.15);
+    border-radius: 10px;
+    font-size: 12px;
+    color: rgba(255,202,40,0.8);
+    line-height: 1.6;
+  }
+
+  .copy-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--muted);
+    padding: 4px 10px; font-size: 11px;
+    cursor: pointer; float: right;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+  .copy-btn.copied { color: var(--green); border-color: rgba(0,230,118,0.3); }
+
+  .new-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--muted);
+    padding: 8px 16px; font-size: 13px;
+    cursor: pointer;
+    margin-left: auto;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .new-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+  .result-header {
+    display: flex; align-items: center; margin-bottom: 20px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .result-header h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px; font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡</div>
+  <div class="logo-text">
+    <h1>ShortsCut AI</h1>
+    <p>롱폼 → 쇼츠 자동 변환기</p>
+  </div>
+  <button class="new-btn" id="new-btn" style="display:none" onclick="location.reload()">← 새 영상 분석</button>
+</header>
+
+<main>
+  <!-- Upload Panel -->
+  <div id="upload-panel">
+    <div class="hero">
+      <h2>롱폼을 <span>쇼츠</span>로<br>AI가 직접 잘라드립니다</h2>
+      <p>영상 + 자막을 올리면 최적 구간을 분석하고 .mp4 파일로 바로 출력해요</p>
+    </div>
+
+    <div class="upload-card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('upload')">📁 파일 업로드</button>
+        <button class="tab" onclick="switchTab('text')">📝 텍스트 입력</button>
+      </div>
+
+      <!-- File upload tab -->
+      <div id="tab-upload">
+        <div class="row">
+          <!-- Video slot -->
+          <div class="file-slot" onclick="document.getElementById('video-input').click()">
+            <label>🎬 영상 파일 (선택)</label>
+            <div class="fname empty" id="video-name">mp4, mov, avi 클릭하여 선택</div>
+            <input type="file" id="video-input" accept=".mp4,.mov,.avi,.mkv" style="display:none" onchange="handleVideoSelect(this)">
+          </div>
+          <!-- Subtitle slot -->
+          <div class="file-slot" onclick="document.getElementById('sub-input').click()">
+            <label>📄 자막 파일 (추천)</label>
+            <div class="fname empty" id="sub-name">srt, txt, vtt 클릭하여 선택</div>
+            <input type="file" id="sub-input" accept=".srt,.txt,.vtt,.sbv" style="display:none" onchange="handleSubSelect(this)">
+          </div>
+        </div>
+        <div class="note" style="margin-top:14px">
+          💡 <strong>자막 파일이 있으면 훨씬 정확해요!</strong> 유튜브 → 더보기 → 스크립트 보기에서 자막을 복사하거나, yt-dlp로 .srt를 다운로드하세요.
+        </div>
+      </div>
+
+      <!-- Text tab -->
+      <div id="tab-text" style="display:none">
+        <textarea id="text-input" placeholder="영상 스크립트나 자막 내용을 붙여넣으세요...
+
+[00:00:05] 안녕하세요, 오늘은 투자에 대해 이야기해볼게요.
+[00:00:10] 많은 분들이 모르는 사실인데요...
+[00:02:15] 이 방법으로 연 수익률 30%를 달성할 수 있습니다."></textarea>
+        <div class="note" style="margin-top:10px">
+          💡 자막에 타임스탬프([00:02:15] 형식)가 있으면 정확한 구간 분석이 가능합니다.
+        </div>
+      </div>
+
+      <button class="btn-analyze" id="analyze-btn" onclick="startAnalysis()">
+        ⚡ AI로 쇼츠 분석 &amp; 영상 자르기
+      </button>
+    </div>
+  </div>
+
+  <!-- Analyzing Panel -->
+  <div id="analyzing-panel">
+    <div class="spinner"></div>
+    <div style="font-family:'Syne',sans-serif; font-size:22px; font-weight:800; letter-spacing:-0.5px; margin-bottom:8px" id="phase-title">분석 중...</div>
+    <div style="color:var(--muted); font-size:14px" id="phase-sub">Claude AI가 쇼츠 구간을 찾고 있어요</div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:5%"></div></div>
+    <div class="log-box" id="log-box"></div>
+  </div>
+
+  <!-- Result Panel -->
+  <div id="result-panel">
+    <div class="result-header">
+      <h3>🎬 쇼츠 분석 완료</h3>
+    </div>
+    <div class="summary-bar">
+      <div class="label">영상 요약</div>
+      <div class="text" id="summary-text"></div>
+    </div>
+    <div class="shorts-grid" id="shorts-grid"></div>
+  </div>
+</main>
+
+<script>
+  let currentTab = 'upload';
+  let videoFile = null;
+  let subFile = null;
+  let pollInterval = null;
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'upload') || (i === 1 && tab === 'text'));
+    });
+    document.getElementById('tab-upload').style.display = tab === 'upload' ? 'block' : 'none';
+    document.getElementById('tab-text').style.display = tab === 'text' ? 'block' : 'none';
+  }
+
+  function handleVideoSelect(input) {
+    videoFile = input.files[0];
+    const el = document.getElementById('video-name');
+    el.textContent = videoFile ? videoFile.name : 'mp4, mov, avi 클릭하여 선택';
+    el.className = 'fname ' + (videoFile ? 'loaded' : 'empty');
+  }
+
+  function handleSubSelect(input) {
+    subFile = input.files[0];
+    const el = document.getElementById('sub-name');
+    el.textContent = subFile ? subFile.name : 'srt, txt, vtt 클릭하여 선택';
+    el.className = 'fname ' + (subFile ? 'loaded' : 'empty');
+  }
+
+  async function startAnalysis() {
+    const formData = new FormData();
+
+    if (currentTab === 'upload') {
+      if (!videoFile && !subFile) {
+        alert('영상 파일 또는 자막 파일을 하나 이상 선택해주세요.');
+        return;
+      }
+      if (videoFile) formData.append('video', videoFile);
+      if (subFile) formData.append('subtitle', subFile);
+    } else {
+      const txt = document.getElementById('text-input').value.trim();
+      if (!txt) { alert('텍스트를 입력해주세요.'); return; }
+      formData.append('text_input', txt);
+    }
+
+    // Switch to analyzing view
+    document.getElementById('upload-panel').style.display = 'none';
+    document.getElementById('analyzing-panel').style.display = 'block';
+    document.getElementById('new-btn').style.display = 'block';
+    animateProgress();
+
+    try {
+      const res = await fetch('/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.error) { showError(data.error); return; }
+      pollStatus(data.job_id);
+    } catch (e) {
+      showError('서버 연결 실패: ' + e.message);
+    }
+  }
+
+  let progValue = 5;
+  let progTimer = null;
+
+  function animateProgress() {
+    progTimer = setInterval(() => {
+      progValue = Math.min(progValue + Math.random() * 4, 88);
+      document.getElementById('prog-fill').style.width = progValue + '%';
+    }, 500);
+  }
+
+  function pollStatus(jobId) {
+    pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/status/' + jobId);
+        const data = await res.json();
+
+        // Update log
+        const logBox = document.getElementById('log-box');
+        logBox.innerHTML = data.log.map(l => `<div class="log-line">${l}</div>`).join('');
+        logBox.scrollTop = logBox.scrollHeight;
+
+        // Update phase title
+        const phases = {
+          queued: ['대기 중...', '작업 시작을 기다리는 중'],
+          analyzing: ['AI 분석 중...', 'Claude가 최적 쇼츠 구간을 찾고 있어요'],
+          cutting: ['영상 자르는 중...', 'FFmpeg으로 쇼츠를 생성하고 있어요'],
+          done: ['완료!', '쇼츠가 준비됐어요'],
+          error: ['오류 발생', data.error || '알 수 없는 오류']
+        };
+        const [title, sub] = phases[data.status] || ['처리 중...', ''];
+        document.getElementById('phase-title').textContent = title;
+        document.getElementById('phase-sub').textContent = sub;
+
+        if (data.status === 'done') {
+          clearInterval(pollInterval);
+          clearInterval(progTimer);
+          document.getElementById('prog-fill').style.width = '100%';
+          setTimeout(() => showResults(data), 600);
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          clearInterval(progTimer);
+          showError(data.error);
+        }
+      } catch (e) {}
+    }, 1200);
+  }
+
+  function showResults(data) {
+    document.getElementById('analyzing-panel').style.display = 'none';
+    document.getElementById('result-panel').style.display = 'block';
+
+    const analysis = data.analysis;
+    document.getElementById('summary-text').textContent = analysis.summary;
+
+    const grid = document.getElementById('shorts-grid');
+    grid.innerHTML = '';
+
+    const hasVideo = data.output_files && data.output_files.length > 0;
+    const fileMap = {};
+    if (hasVideo) {
+      data.output_files.forEach(f => { fileMap[f.index] = f; });
+    }
+
+    analysis.shorts.forEach((s, i) => {
+      const score = s.score || 0;
+      const scoreColor = score >= 90 ? '#00e676' : score >= 75 ? '#ffca28' : '#ff6b6b';
+      const file = fileMap[i + 1];
+
+      const downloadSection = file
+        ? `<a class="download-btn" href="${file.download_url}" download>
+             ⬇ shorts_${i+1}.mp4 다운로드
+           </a>`
+        : `<div class="no-video-note">
+             ⚠️ 영상 파일이 없어 자막 분석만 제공됩니다. 영상 파일을 함께 업로드하면 .mp4로 직접 출력돼요.
+           </div>`;
+
+      const card = document.createElement('div');
+      card.className = 'short-card';
+      card.innerHTML = `
+        <div class="short-header" onclick="toggleCard(this.parentElement)">
+          <div class="short-num">${i+1}</div>
+          <div class="short-meta">
+            <div class="short-title">${s.title}</div>
+            <div class="short-info">${s.start_str} → ${s.end_str} &nbsp;·&nbsp; ${s.duration}</div>
+          </div>
+          <div class="score-badge" style="color:${scoreColor}">${score}</div>
+          <div class="chevron">▼</div>
+        </div>
+        <div class="short-body">
+          <div class="detail-grid">
+            <div class="detail-box">
+              <div class="dlabel">⚡ 훅 (첫 3초)</div>
+              <div class="dval hook">"${s.hook}"</div>
+            </div>
+            <div class="detail-box">
+              <div class="dlabel">⏱ 구간</div>
+              <div class="dval" style="font-variant-numeric:tabular-nums;font-weight:600">${s.start_str} → ${s.end_str}</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:4px">${s.duration}</div>
+            </div>
+            <div class="detail-box full">
+              <div class="dlabel">💡 선택 이유 (알고리즘 관점)</div>
+              <div class="dval" style="color:rgba(255,255,255,0.75)">${s.reason}</div>
+            </div>
+            <div class="detail-box full">
+              <div class="dlabel">
+                #️⃣ 해시태그
+                <button class="copy-btn" onclick="copyTags(event, ${i})">복사</button>
+              </div>
+              <div class="tags" id="tags-${i}">
+                ${(s.tags||[]).map(t => `<span class="tag">${t}</span>`).join('')}
+              </div>
+            </div>
+            ${s.script ? `
+            <div class="detail-box full">
+              <div class="dlabel">
+                📋 자막 스크립트
+                <button class="copy-btn" onclick="copyScript(event, ${i})">복사</button>
+              </div>
+              <div class="script-box" id="script-${i}">${s.script}</div>
+            </div>` : ''}
+          </div>
+          ${downloadSection}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function toggleCard(card) {
+    card.classList.toggle('open');
+  }
+
+  function copyTags(e, idx) {
+    e.stopPropagation();
+    const tags = document.querySelectorAll(`#tags-${idx} .tag`);
+    const text = Array.from(tags).map(t => t.textContent).join(' ');
+    navigator.clipboard.writeText(text);
+    markCopied(e.target);
+  }
+
+  function copyScript(e, idx) {
+    e.stopPropagation();
+    const text = document.getElementById('script-' + idx).textContent;
+    navigator.clipboard.writeText(text);
+    markCopied(e.target);
+  }
+
+  function markCopied(btn) {
+    btn.textContent = '✓ 복사됨';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 2000);
+  }
+
+  function showError(msg) {
+    document.getElementById('analyzing-panel').style.display = 'none';
+    document.getElementById('upload-panel').style.display = 'block';
+    alert('오류: ' + msg);
+  }
+</script>
+</body>
+</html>
